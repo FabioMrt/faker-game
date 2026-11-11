@@ -2,8 +2,8 @@ import { Redis } from '@upstash/redis';
 import type { OnlineRoom } from './online-types';
 
 const ROOM_TTL_SECONDS = 60 * 60 * 4;
-const redisUrl = process.env.UPSTASH_REDIS_REST_URL?.trim() ?? '';
-const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ?? '';
+const redisUrl = (process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL)?.trim() ?? '';
+const redisToken = (process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN)?.trim() ?? '';
 
 function createRedisClient() {
   if (!redisUrl && !redisToken) return { client: null, error: null };
