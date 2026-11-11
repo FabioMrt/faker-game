@@ -26,9 +26,27 @@ async function callApi(payload: Record<string, unknown>): Promise<Extract<ApiRes
   const response = await fetch('/api/online', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), cache: 'no-store',
   });
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(response.ok
+      ? 'A resposta da sala veio em um formato inesperado. Tente novamente.'
+      : 'O servidor da sala está indisponível no momento. Tente novamente em instantes.');
+  }
   const result = await response.json() as ApiResult;
   if (!result.ok) throw new Error(result.error);
   return result;
+}
+
+function replaceRoomUrl(code?: string) {
+  try {
+    const url = new URL(window.location.href);
+    url.pathname = '/online';
+    if (code) url.searchParams.set('room', code);
+    else url.searchParams.delete('room');
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  } catch {
+    // A sala continua funcionando mesmo em navegadores que bloqueiam a History API.
+  }
 }
 
 function Pixel() { return <span aria-hidden="true" className="pixel"><i/><i/></span>; }
@@ -87,7 +105,7 @@ export default function OnlinePage() {
       if (!result.credentials) throw new Error('A sala não devolveu uma sessão válida.');
       localStorage.setItem('faker-online-session', JSON.stringify(result.credentials));
       setCredentials(result.credentials); setRoom(result.room);
-      window.history.replaceState(null, '', `/online?room=${result.credentials.code}`);
+      replaceRoomUrl(result.credentials.code);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível entrar.'); }
     finally { setBusy(false); }
   }
@@ -122,7 +140,7 @@ export default function OnlinePage() {
   function forgetRoom() {
     localStorage.removeItem('faker-online-session');
     setCredentials(null); setRoom(null); setError(''); setJoinCode('');
-    window.history.replaceState(null, '', '/online');
+    replaceRoomUrl();
   }
 
   return <div className="app online-app">

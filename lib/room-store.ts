@@ -2,8 +2,25 @@ import { Redis } from '@upstash/redis';
 import type { OnlineRoom } from './online-types';
 
 const ROOM_TTL_SECONDS = 60 * 60 * 4;
-const configured = Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
-const redis = configured ? Redis.fromEnv() : null;
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL?.trim() ?? '';
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ?? '';
+
+function createRedisClient() {
+  if (!redisUrl && !redisToken) return { client: null, error: null };
+  if (!redisUrl || !redisToken) {
+    return { client: null, error: 'A conexão do Redis está incompleta na Vercel.' };
+  }
+  try {
+    const parsedUrl = new URL(redisUrl);
+    if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') throw new Error('invalid protocol');
+    return { client: new Redis({ url: redisUrl, token: redisToken }), error: null };
+  } catch {
+    return { client: null, error: 'A URL do Redis na Vercel é inválida. Use a variável REST URL fornecida pela Upstash.' };
+  }
+}
+
+const redisConfiguration = createRedisClient();
+const redis = redisConfiguration.client;
 
 type MemoryEntry = { room: OnlineRoom; expiresAt: number };
 const globalRooms = globalThis as typeof globalThis & { __fakerRooms?: Map<string, MemoryEntry> };
@@ -16,6 +33,9 @@ function roomKey(code: string) { return `faker:room:${code}`; }
 function lockKey(code: string) { return `faker:lock:${code}`; }
 
 function assertAvailable() {
+  if (redisConfiguration.error) {
+    throw new RoomStoreUnavailableError(redisConfiguration.error);
+  }
   if (!redis && process.env.NODE_ENV === 'production') {
     throw new RoomStoreUnavailableError('O modo online ainda precisa do Redis conectado na Vercel.');
   }
