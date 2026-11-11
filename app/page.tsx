@@ -64,6 +64,7 @@ export default function Home() {
   <main>
    {stage==='setup' ? <>
     <section className="intro"><div className="eyebrow">FALE. BLEFE. NÃO ENTREGUE.</div><h1>TODO MUNDO SABE.<br/><span>UM SÓ DISFARÇA.</span></h1><p>Uma palavra secreta. Um intruso. A sua melhor cara de inocente.</p><div className="mascot-parade" aria-hidden="true"><Pixel/><Pixel/><Pixel/><span className="speech">EU SEI. JURO.</span></div></section>
+    <nav className="game-mode-nav" aria-label="Modo de jogo"><span><b>NO MESMO CELULAR</b><small>Passe o aparelho pela roda</small></span><a href="/online"><b>SALA ONLINE</b><small>Cada amigo no seu celular</small><i>→</i></a></nav>
     <section className="panel players-panel"><div className="section-heading"><div><span className="step">01</span><h2>TIME DE SUSPEITOS</h2></div><span className="count">{players.length}/20</span></div>
       <form onSubmit={e=>{e.preventDefault();add();}} className="add-player"><input ref={input} aria-label="Nome do jogador" placeholder="Manda o nome ou apelido..." maxLength={24} value={name} onChange={e=>{setName(e.target.value);setError('');}} autoComplete="off"/><button aria-label="Adicionar jogador" disabled={!name.trim()||players.length>=20}>+ <span>ADICIONAR</span></button></form>
       {error&&<p className="error" role="alert">{error}</p>}
