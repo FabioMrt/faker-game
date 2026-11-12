@@ -21,6 +21,7 @@ export type OnlineRoom = {
   hint: string | null;
   impostorId: string | null;
   starterId: string | null;
+  speakingOrderIds: string[];
   createdAt: number;
   updatedAt: number;
 };

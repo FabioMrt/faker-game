@@ -10,7 +10,7 @@ function room() {
       { id: 'b', token: 'secret-b', name: 'Bia', color: 1, ready: false, viewed: false, joinedAt: 2 },
       { id: 'c', token: 'secret-c', name: 'Caio', color: 2, ready: false, viewed: false, joinedAt: 3 },
     ],
-    word: null, hint: null, impostorId: null, starterId: null, createdAt: 1, updatedAt: 1,
+    word: null, hint: null, impostorId: null, starterId: null, speakingOrderIds: [], createdAt: 1, updatedAt: 1,
   };
 }
 
@@ -43,5 +43,22 @@ test('next online round clears every secret and ready state', () => {
   assert.equal(value.phase, 'lobby');
   assert.equal(value.themeId, null);
   assert.equal(value.word, null);
+  assert.deepEqual(value.speakingOrderIds, []);
   assert.equal(value.players.some(player => player.ready || player.viewed), false);
+});
+
+test('each online round includes every player in a shuffled speaking order', () => {
+  const value = room();
+  const theme = { entries: [['Espelho', 'Vaidade', 'Rotina', 'Detalhe']] };
+  prepareOnlineRound(value, theme, () => 0);
+  const firstOrder = [...value.speakingOrderIds];
+  assert.deepEqual([...firstOrder].sort(), ['a', 'b', 'c']);
+  assert.equal(new Set(firstOrder).size, value.players.length);
+  assert.equal(value.starterId, firstOrder[0]);
+
+  const picks = [0, 0, 2, 1];
+  prepareOnlineRound(value, theme, limit => (picks.shift() ?? 0) % limit);
+  assert.deepEqual([...value.speakingOrderIds].sort(), ['a', 'b', 'c']);
+  assert.notDeepEqual(value.speakingOrderIds, firstOrder);
+  assert.equal(value.starterId, value.speakingOrderIds[0]);
 });

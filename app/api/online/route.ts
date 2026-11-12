@@ -59,6 +59,7 @@ async function create(name: string) {
     const room: OnlineRoom = {
       code: randomCode(), hostId: host.id, phase: 'lobby', themeId: null, roundNumber: 0,
       players: [host], word: null, hint: null, impostorId: null, starterId: null,
+      speakingOrderIds: [],
       createdAt: now, updatedAt: now,
     };
     if (await createStoredRoom(room)) return roomResponse(room, host.id, host);

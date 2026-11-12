@@ -7,7 +7,7 @@ type PublicPlayer = { id: string; name: string; color: number; ready: boolean; v
 type Card = { role: 'player' | 'impostor'; value: string };
 type RoomView = {
   code: string; phase: RoomPhase; themeId: string | null; roundNumber: number; hostId: string;
-  starterId: string | null; allReady: boolean; players: PublicPlayer[];
+  starterId: string | null; speakingOrderIds: string[]; allReady: boolean; players: PublicPlayer[];
   viewer: { id: string; isHost: boolean; card: Card | null };
   result: { impostorId: string; word: string; hint: string } | null;
 };
@@ -67,7 +67,7 @@ export default function OnlinePage() {
   const holding = useRef(false);
 
   const me = room?.players.find(player => player.id === room.viewer.id) ?? null;
-  const starter = room?.players.find(player => player.id === room.starterId) ?? null;
+  const speakingOrder = (room?.speakingOrderIds ?? []).map(id => room?.players.find(player => player.id === id)).filter((player): player is PublicPlayer => Boolean(player));
   const impostor = room?.players.find(player => player.id === room.result?.impostorId) ?? null;
   const selectedTheme = useMemo(() => themes.find(theme => theme[0] === room?.themeId), [room?.themeId]);
 
@@ -200,7 +200,7 @@ export default function OnlinePage() {
         {!room.viewer.isHost && room.allReady && <p className="privacy-note">Todo mundo pronto. Aguardando o host iniciar.</p>}
       </section>}
 
-      {room.phase === 'discussion' && <section className="end-panel online-end-panel"><span className="big-symbol">☷</span><div className="eyebrow center">TODO MUNDO VIU A CARTA</div><h1>HORA DO<br/><span>BLEFE.</span></h1><p>Conversem pela ligação. Cada pessoa fala uma palavra relacionada, sem entregar o segredo.</p><div className="starter"><small>QUEM COMEÇA</small><strong className="colored-name" style={playerStyle(starter?.color ?? 0)}>{starter?.name}</strong><span>Depois, sigam a ordem da chamada.</span></div>{room.viewer.isHost ? <button className="primary full" onClick={() => void action('revealResult')}>REVELAR O FAKER <span>→</span></button> : <div className="waiting-panel compact"><span>O HOST REVELA DEPOIS DA VOTAÇÃO</span></div>}</section>}
+      {room.phase === 'discussion' && <section className="end-panel online-end-panel"><span className="big-symbol">☷</span><div className="eyebrow center">TODO MUNDO VIU A CARTA</div><h1>HORA DO<br/><span>BLEFE.</span></h1><p>Conversem pela ligação. Cada pessoa fala uma palavra relacionada, sem entregar o segredo.</p><div className="speaking-order"><div className="speaking-order-title"><small>ORDEM DE FALA</small><span>NOVA A CADA RODADA</span></div><ol>{speakingOrder.map((player, index) => <li key={player.id} style={playerStyle(player.color)}><span className="order-number">{String(index + 1).padStart(2, '0')}</span><i/><strong>{player.name}</strong>{index === 0 && <em>COMEÇA</em>}</li>)}</ol></div>{room.viewer.isHost ? <button className="primary full" onClick={() => void action('revealResult')}>REVELAR O FAKER <span>→</span></button> : <div className="waiting-panel compact"><span>O HOST REVELA DEPOIS DA VOTAÇÃO</span></div>}</section>}
 
       {room.phase === 'result' && room.result && <section className="end-panel online-end-panel"><div className="eyebrow center">O SEGREDO ACABOU</div><h1>ERA <span>{impostor?.name}!</span></h1><div className="result-card"><span className="badge">FAKER</span><strong className="colored-name" style={playerStyle(impostor?.color ?? 0)}>{impostor?.name}</strong><div className="answer-row"><div><small>PALAVRA SECRETA</small><b>{room.result.word}</b></div><div><small>DICA RECEBIDA</small><b>{room.result.hint}</b></div></div></div>{room.viewer.isHost ? <button className="primary full" onClick={() => void action('nextRound')}>NOVA RODADA <span>↻</span></button> : <div className="waiting-panel compact"><span>AGUARDANDO O HOST PREPARAR A PRÓXIMA</span></div>}</section>}
     </main>}
